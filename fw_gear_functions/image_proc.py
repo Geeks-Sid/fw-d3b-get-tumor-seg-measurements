@@ -54,7 +54,8 @@ def find_largest_tumor_slice(volume):
 
 def find_major_minor_axes(slice):
     """Find the major and minor axes of the largest contour in a 2D slice."""
-    contours, _ = cv2.findContours(slice.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # CHAIN_APPROX_NONE: SIMPLE compresses straight runs to their end points, leaving <5 points for fitEllipse
+    contours, _ = cv2.findContours(slice.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
     largest_contour = max(contours, key=cv2.contourArea)
     ellipse = cv2.fitEllipse(largest_contour)
     return ellipse

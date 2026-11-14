@@ -1,27 +1,21 @@
 """Main module."""
 import logging
-import os
 
-from fw_core_client import CoreClient
-from flywheel_gear_toolkit import GearToolkitContext
-import flywheel
+import cv2
 
-from .run_level import get_analysis_run_level_and_hierarchy
 from .image_proc import *
 
 log = logging.getLogger(__name__)
 
-fw_context = flywheel.GearContext()
-fw = fw_context.client
-
 def process(seg_filename):
-    """Process `file_path` and returns a `flywheel.FileEntry` and its corresponding meta.
+    """Calculate 3D volumes and 2D measurements for the segmentation at `seg_filename`.
 
     Args:
         seg_filename  (Path-like): Path to input-file.
     Returns:
-        dict: Dictionary of file attributes to update.
-        dict: Dictionary containing the file meta.
+        dict: 3D volumes (mm³) keyed by label name, plus 'whole_tumor'.
+        dict: 2D measurements (major_axis, minor_axis, largest_slice_index,
+            cross_sectional_area); all None if they cannot be calculated.
     """
 
     label_mapping = {
@@ -53,7 +47,8 @@ def process(seg_filename):
                                 'cross_sectional_area': int(csa),
                                 }
 
-    except:
+    except (ValueError, cv2.error) as exc:  # e.g. empty mask, or too few contour points to fit an ellipse
+        log.warning(f"Could not calculate 2D measurements: {exc}")
         twoD_dictionary = {'major_axis': None,
                             'minor_axis': None,
                             'largest_slice_index': None,
@@ -63,17 +58,14 @@ def process(seg_filename):
     return threeD_dictionary,twoD_dictionary
 
 def run(seg_filename):
-    """Processes file at file_path.
+    """Processes the segmentation at `seg_filename`; see `process`.
 
     Args:
-        file_type (str): String defining file type.
-        file_path (AnyPath): A Path-like to file input.
-        project (flywheel.Project): The flywheel project the file is originating
-            (Default: None).
+        seg_filename (Path-like): Path to input-file.
 
     Returns:
-        dict: Dictionary of file attributes to update.
-        dict: Dictionary containing the file meta.
+        dict: 3D volumes.
+        dict: 2D measurements.
 
     """
     fe = process(

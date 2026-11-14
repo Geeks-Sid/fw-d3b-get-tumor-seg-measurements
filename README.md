@@ -33,25 +33,27 @@ The gear will take a 3D segmentation and calculate the total volume (mm³) for t
 
 ### Configuration
 
-* __segmentation_type__ (number, default 0): Whether the input segmentation was created manually or model-predicted. 0=get from file-name, 1=manual, 2=model-predicted. If 0, relies on "manual" or "pred" in the file name to determine the output metadata.
+* __segmentation_type__ (number, default 0): Whether the input segmentation was created manually or model-predicted. 0=get from file-name, 1=manual, 2=model-predicted. If 0, relies on "manual" or "pred" in the file name (case-insensitive, "manual" wins if both are present) to determine the output metadata; the gear fails if neither is found.
 * __debug__ (boolean, default False): Include debug statements in output.
 
 ### Outputs
 
-Session metadata updated with measurements: `session.info.measurements.tumor_segm.[model_prediction/manual].[3d/2d].[measurement]`
+Session metadata updated with measurements: `session.info.measurements.tumor_segm.[model_predicted/manual].[3d/2d].[measurement]`
+
+Only `tumor_segm.<segmentation type>` is replaced on each run; other session measurements and the other segmentation type are kept.
 
 Such as (default):
 
-- session.info.measurements.tumor_segm.[model_prediction/manual].3d.whole_tumor
-- session.info.measurements.tumor_segm.[model_prediction/manual].3d.enhancing
-- session.info.measurements.tumor_segm.[model_prediction/manual].3d.non_enhancing
-- session.info.measurements.tumor_segm.[model_prediction/manual].3d.cystic
-- session.info.measurements.tumor_segm.[model_prediction/manual].3d.edema
+- session.info.measurements.tumor_segm.[model_predicted/manual].3d.whole_tumor
+- session.info.measurements.tumor_segm.[model_predicted/manual].3d.enhancing
+- session.info.measurements.tumor_segm.[model_predicted/manual].3d.nonenhancing
+- session.info.measurements.tumor_segm.[model_predicted/manual].3d.cyst
+- session.info.measurements.tumor_segm.[model_predicted/manual].3d.edema
 
-- session.info.measurements.tumor_segm.[model_prediction/manual].2d.major_axis
-- session.info.measurements.tumor_segm.[model_prediction/manual].2d.minor_axis
-- session.info.measurements.tumor_segm.[model_prediction/manual].2d.largest_slice_index
-- session.info.measurements.tumor_segm.[model_prediction/manual].2d.cross_sectional_area
+- session.info.measurements.tumor_segm.[model_predicted/manual].2d.major_axis
+- session.info.measurements.tumor_segm.[model_predicted/manual].2d.minor_axis
+- session.info.measurements.tumor_segm.[model_predicted/manual].2d.largest_slice_index
+- session.info.measurements.tumor_segm.[model_predicted/manual].2d.cross_sectional_area
 
 Where, for 3D:
 - Whole tumor = total volume of all non-zero voxels
@@ -60,12 +62,22 @@ Where, for 3D:
 - Cystic = total volume of all voxels with value of 3
 - Edema = total volume of all voxels with value of 4
 
-For 2D:
-CSA = 2D cross-sectional area by bidirectional measurements at slice with greatest 3D width
+For 2D (measured on the slice, along the third image axis, with the largest whole-tumor area):
+- major_axis / minor_axis = full lengths of the major / minor axes of the ellipse fitted to the largest tumor contour in that slice, in voxels (not mm)
+- largest_slice_index = 0-based index of that slice
+- cross_sectional_area = area of that ellipse, pi/4 × major_axis × minor_axis, in voxels² (not mm²)
+- all values are truncated to integers
 
 
 ## :exclamation: Limitations
 
 - uses __all__ non-zero voxels to calculate whole-tumor
-- support for alternative label mappings not implemented yet
-- 2D measurements may error with multi-focal tumors, will result in 'None' measurements
+- the `label-mapping` input is currently ignored; the default mapping is always used
+- 2D measurements are `None` if the file has no tumor voxels or the largest tumor contour in the slice has fewer than 5 boundary voxels (too small to fit an ellipse); with multi-focal tumors only the largest region in the slice is measured
+
+## :test_tube: Tests
+
+```
+pip install -r requirements.txt pytest
+python -m pytest
+```

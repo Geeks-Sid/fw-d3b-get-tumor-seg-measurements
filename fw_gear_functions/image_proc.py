@@ -46,7 +46,7 @@ def calculate_3d_volumes(mask, voxel_volume, label_mapping):
 
 def find_largest_tumor_slice(volume):
     """Find the largest tumor slice in a 3D volume."""
-    combined_tumor = np.where(np.isin(volume, [1, 2, 3, 4]), 1, 0)
+    combined_tumor = np.rint(volume) >= 1  # same whole-tumor definition as calculate_3d_volumes
     slice_areas = np.sum(combined_tumor, axis=(0, 1))
     largest_slice_index = np.argmax(slice_areas)
     log.info(f"Largest 2D Tumor Slice Index: {largest_slice_index}")
@@ -54,20 +54,21 @@ def find_largest_tumor_slice(volume):
 
 def find_major_minor_axes(slice):
     """Find the major and minor axes of the largest contour in a 2D slice."""
-    contours, _ = cv2.findContours(slice.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # CHAIN_APPROX_NONE: SIMPLE compresses straight runs to their end points, leaving <5 points for fitEllipse
+    contours, _ = cv2.findContours(slice.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
     largest_contour = max(contours, key=cv2.contourArea)
     ellipse = cv2.fitEllipse(largest_contour)
     return ellipse
 
 def calculate_cross_section_area_ellipse(diameter1, diameter2):
   """
-  Calculates the approximate cross-sectional area using the product of two perpendicular diameters.
+  Calculates the area of the ellipse whose full axis lengths are the two given diameters.
 
   Args:
-    diameter1: The length of the first largest diameter.
-    diameter2: The length of the second largest diameter, perpendicular to the first.
+    diameter1: The length of the first (major) axis, i.e. the full diameter, not the semi-axis.
+    diameter2: The length of the second (minor) axis, perpendicular to the first.
 
   Returns:
-    The approximate cross-sectional area.
+    The ellipse area, pi * (diameter1 / 2) * (diameter2 / 2).
   """
-  return math.pi * diameter1 * diameter2
+  return math.pi * diameter1 * diameter2 / 4

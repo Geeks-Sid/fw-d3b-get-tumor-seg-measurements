@@ -32,6 +32,11 @@ def main(context: GearToolkitContext) -> None:  # pragma: no cover
             seg_type = 'manual'
         elif 'pred' in file_name:
             seg_type = 'model_predicted'
+        else:
+            raise ValueError(
+                f"Cannot infer segmentation type from file name '{file_name}': "
+                "it must contain 'manual' or 'pred', or set the segmentation_type config."
+            )
     elif config['segmentation_type'] == 1:
         seg_type = 'manual'
     elif config['segmentation_type'] == 2:
@@ -45,10 +50,8 @@ def main(context: GearToolkitContext) -> None:  # pragma: no cover
     # add measurements to session metadata (make sure not to overwrite existing metadata)
     session = session.reload()
     session_info = session.info
-    if 'measurements' not in session_info.keys():
-        session_info['measurements'] = {}
-    session_info['measurements'] = {'tumor_segm' : {f'{seg_type}': {'3d':threeD_dictionary}}} # will overwrite anything in measurements
-    session_info['measurements']['tumor_segm'][seg_type]['2d'] = twoD_dictionary
+    tumor_segm = session_info.setdefault('measurements', {}).setdefault('tumor_segm', {})
+    tumor_segm[seg_type] = {'3d': threeD_dictionary, '2d': twoD_dictionary}  # only replaces this segmentation type
     session.update_info(session_info)
     log.info(f"Updated session {session.label} metadata")
 

@@ -61,13 +61,13 @@ def find_major_minor_axes(slice):
 
 def calculate_cross_section_area_ellipse(diameter1, diameter2):
   """
-  Calculates the approximate cross-sectional area using the product of two perpendicular diameters.
+  Calculates the area of the ellipse whose full axis lengths are the two given diameters.
 
   Args:
-    diameter1: The length of the first largest diameter.
-    diameter2: The length of the second largest diameter, perpendicular to the first.
+    diameter1: The length of the first (major) axis, i.e. the full diameter, not the semi-axis.
+    diameter2: The length of the second (minor) axis, perpendicular to the first.
 
   Returns:
-    The approximate cross-sectional area.
+    The ellipse area, pi * (diameter1 / 2) * (diameter2 / 2).
   """
-  return math.pi * diameter1 * diameter2
+  return math.pi * diameter1 * diameter2 / 4

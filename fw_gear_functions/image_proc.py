@@ -46,7 +46,7 @@ def calculate_3d_volumes(mask, voxel_volume, label_mapping):
 
 def find_largest_tumor_slice(volume):
     """Find the largest tumor slice in a 3D volume."""
-    combined_tumor = np.where(np.isin(volume, [1, 2, 3, 4]), 1, 0)
+    combined_tumor = np.rint(volume) >= 1  # same whole-tumor definition as calculate_3d_volumes
     slice_areas = np.sum(combined_tumor, axis=(0, 1))
     largest_slice_index = np.argmax(slice_areas)
     log.info(f"Largest 2D Tumor Slice Index: {largest_slice_index}")

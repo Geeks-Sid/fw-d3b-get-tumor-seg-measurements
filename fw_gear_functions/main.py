@@ -1,6 +1,8 @@
 """Main module."""
 import logging
 
+import cv2
+
 from .image_proc import *
 
 log = logging.getLogger(__name__)
@@ -44,7 +46,8 @@ def process(seg_filename):
                                 'cross_sectional_area': int(csa),
                                 }
 
-    except:
+    except (ValueError, cv2.error) as exc:  # e.g. empty mask, or too few contour points to fit an ellipse
+        log.warning(f"Could not calculate 2D measurements: {exc}")
         twoD_dictionary = {'major_axis': None,
                             'minor_axis': None,
                             'largest_slice_index': None,

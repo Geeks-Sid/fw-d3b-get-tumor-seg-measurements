@@ -32,6 +32,11 @@ def main(context: GearToolkitContext) -> None:  # pragma: no cover
             seg_type = 'manual'
         elif 'pred' in file_name:
             seg_type = 'model_predicted'
+        else:
+            raise ValueError(
+                f"Cannot infer segmentation type from file name '{file_name}': "
+                "it must contain 'manual' or 'pred', or set the segmentation_type config."
+            )
     elif config['segmentation_type'] == 1:
         seg_type = 'manual'
     elif config['segmentation_type'] == 2:

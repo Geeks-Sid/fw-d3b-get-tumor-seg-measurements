@@ -74,3 +74,10 @@ For 2D (measured on the slice, along the third image axis, with the largest whol
 - uses __all__ non-zero voxels to calculate whole-tumor
 - the `label-mapping` input is currently ignored; the default mapping is always used
 - 2D measurements are `None` if the file has no tumor voxels or the largest tumor contour in the slice has fewer than 5 boundary voxels (too small to fit an ellipse); with multi-focal tumors only the largest region in the slice is measured
+
+## :test_tube: Tests
+
+```
+pip install -r requirements.txt pytest
+python -m pytest
+```
